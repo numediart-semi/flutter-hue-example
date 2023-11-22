@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hue/flutter_hue.dart';
+import 'package:go_router/go_router.dart';
 
 class DiscoveryScreen extends StatefulWidget {
-  const DiscoveryScreen({super.key});
+  final Function(String) onBridgeSelected;
+
+  const DiscoveryScreen({super.key, required this.onBridgeSelected});
 
   @override
   State<DiscoveryScreen> createState() => _DiscoveryScreenState();
@@ -72,9 +75,12 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
-            const ElevatedButton(
-              onPressed: null,
-              child: Text('Connect'),
+            ElevatedButton(
+              onPressed: () {
+                context.pop();
+                widget.onBridgeSelected(bridgeIp);
+              },
+              child: const Text('Connect'),
             ),
           ],
         );
