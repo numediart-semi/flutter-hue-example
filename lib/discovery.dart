@@ -32,10 +32,13 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
       body: ListView.builder(
         itemCount: _bridgeIps.length,
         itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(_bridgeIps[index]),
-            onTap: null,
-            leading: const Icon(Icons.router),
+          return Card(
+            clipBehavior: Clip.hardEdge,
+            child: ListTile(
+              title: Text(_bridgeIps[index]),
+              onTap: () => _onBridgeSelected(_bridgeIps[index]),
+              leading: const Icon(Icons.router),
+            ),
           );
         },
       ),
@@ -55,5 +58,27 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
     } finally {
       setState(() => _scanning = false);
     }
+  }
+
+  _onBridgeSelected(String bridgeIp) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Bridge Connection'),
+          content: Text('You will connect to Bridge with IP: $bridgeIp'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            const ElevatedButton(
+              onPressed: null,
+              child: Text('Connect'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
