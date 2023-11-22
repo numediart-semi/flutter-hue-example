@@ -9,7 +9,8 @@ class FlutterHueApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Hue',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        unselectedWidgetColor: Colors.blue,
+        useMaterial3: true,
       ),
       home: const DiscoveryScreen(),
     );
