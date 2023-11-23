@@ -54,7 +54,14 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
       _bridgeIps = [];
     });
     try {
-      List<String> bridgeIps = await BridgeDiscoveryRepo.discoverBridges();
+      List<String> bridgeIps = await Future.wait([
+        _fetchSavedBridges(),
+        BridgeDiscoveryRepo.discoverBridges(),
+      ]).then((sources) => [
+            ...sources[0],
+            ...sources[1],
+          ]);
+
       setState(() => _bridgeIps = bridgeIps);
     } catch (e) {
       print(e);
@@ -86,5 +93,10 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
         );
       },
     );
+  }
+
+  Future<List<String>> _fetchSavedBridges() async {
+    final savedBridges = await BridgeDiscoveryRepo.fetchSavedBridges();
+    return savedBridges.map((e) => e.ipAddress).whereType<String>().toList();
   }
 }

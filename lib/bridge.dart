@@ -14,41 +14,98 @@ class BridgeScreen extends StatefulWidget {
 
 class _BridgeScreenState extends State<BridgeScreen> {
   Bridge? _bridge;
+  List<Device> _devices = [];
+  late HueNetwork _network;
+  bool _refreshing = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Bridge')),
+      appBar: AppBar(
+        title: const Text('Bridge'),
+        bottom: !_refreshing
+            ? null
+            : const PreferredSize(
+                preferredSize: Size.fromHeight(1),
+                child: LinearProgressIndicator(value: null),
+              ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _refreshing ? null : _refresh,
+        child: const Icon(Icons.refresh),
+      ),
       body: _bridge == null
           ? Container()
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
-                  child: Text(
-                    "Bridge",
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 8, right: 8),
-                  child: Card(
-                    child: Column(
-                      children: [
-                        ListTile(
-                          title: const Text("Bridge ID"),
-                          subtitle: Text(_bridge!.bridgeId),
-                        ),
-                        ListTile(
-                          title: const Text("IP Address"),
-                          subtitle: Text(_bridge!.ipAddress!),
-                        ),
-                      ],
+          : SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
+                    child: Text(
+                      "Bridge",
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
-                )
-              ],
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8, right: 8),
+                    child: Card(
+                      child: Column(
+                        children: [
+                          ListTile(
+                            title: const Text("Bridge ID"),
+                            subtitle: Text(_bridge!.bridgeId),
+                          ),
+                          ListTile(
+                            title: const Text("IP Address"),
+                            subtitle: Text(_bridge!.ipAddress!),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  _devices.isEmpty
+                      ? Container()
+                      : Padding(
+                          padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
+                          child: Text(
+                            "Devices",
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _devices.length,
+                    itemBuilder: (context, index) {
+                      final device = _devices[index];
+                      final light = getLight(device);
+                      final dimmer = getDimmer(device);
+                      final bridge = getBridge(device);
+                      final IconData leading;
+                      if (light != null) {
+                        leading = Icons.lightbulb;
+                      } else if (dimmer != null) {
+                        leading = Icons.settings_remote;
+                      } else if (bridge != null) {
+                        leading = Icons.router;
+                      } else {
+                        leading = Icons.question_mark;
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 8, right: 8),
+                        child: Card(
+                          child: ListTile(
+                            title: Text(device.metadata.name),
+                            subtitle: Text(device.productData.productName),
+                            leading: Icon(leading),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
     );
   }
@@ -78,8 +135,20 @@ class _BridgeScreenState extends State<BridgeScreen> {
     }
     setState(() {
       _bridge = bridge;
+      _network = HueNetwork(bridges: [_bridge!]);
     });
+    await _refresh();
+    _hideSnackBar();
+  }
 
+  _refresh() async {
+    if (_bridge == null) return;
+    setState(() => _refreshing = true);
+    await _network.fetchAll();
+    setState(() {
+      _devices = _network.devices;
+    });
+    setState(() => _refreshing = false);
     _hideSnackBar();
   }
 
@@ -134,4 +203,10 @@ class _BridgeScreenState extends State<BridgeScreen> {
           );
         },
       );
+
+  Light? getLight(Device device) => _network.lights.where((element) => element.owner.id == device.id).firstOrNull;
+
+  Button? getDimmer(Device device) => _network.buttons.where((element) => element.owner.id == device.id).firstOrNull;
+
+  Bridge? getBridge(Device device) => _network.bridges.where((element) => element.owner.id == device.id).firstOrNull;
 }
