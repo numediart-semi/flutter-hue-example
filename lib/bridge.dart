@@ -82,23 +82,30 @@ class _BridgeScreenState extends State<BridgeScreen> {
                       final light = getLight(device);
                       final dimmer = getDimmer(device);
                       final bridge = getBridge(device);
-                      final IconData leading;
+
+                      IconData leading = Icons.question_mark;
+                      VoidCallback? onTap;
                       if (light != null) {
-                        leading = Icons.lightbulb;
+                        leading = light.on.isOn ? Icons.lightbulb : Icons.lightbulb_outline;
+                        onTap = () {
+                          light.on.isOn = !light.on.isOn;
+                          _network.put();
+                          setState(() {});
+                        };
                       } else if (dimmer != null) {
                         leading = Icons.settings_remote;
                       } else if (bridge != null) {
                         leading = Icons.router;
-                      } else {
-                        leading = Icons.question_mark;
                       }
                       return Padding(
                         padding: const EdgeInsets.only(left: 8, right: 8),
                         child: Card(
+                          clipBehavior: Clip.hardEdge,
                           child: ListTile(
                             title: Text(device.metadata.name),
                             subtitle: Text(device.productData.productName),
                             leading: Icon(leading),
+                            onTap: onTap,
                           ),
                         ),
                       );
